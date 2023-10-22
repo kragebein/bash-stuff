@@ -1,0 +1,37 @@
+#!/bin/bash
+
+storage="$HOME/Pictures"
+name="$(date).png"
+newname="$(echo "$name" |sed -e 's/ /_/g')"
+file="$storage/$newname"
+
+if $(grim -c -g "$(slurp)" - >> "$file"); then
+	# Alter image:
+	magick "$file" \
+     \( +clone  -alpha extract \
+        -draw 'fill black polygon 0,0 0,15 15,0 fill white circle 15,15 15,0' \
+        \( +clone -flip \) -compose Multiply -composite \
+        \( +clone -flop \) -compose Multiply -composite \
+     \) -alpha off -compose CopyOpacity -composite $file
+		
+	# Read the image into clipboard
+	cat "$file" |wl-copy
+
+case $(notify-send --icon="$file" --app-name="Screenshot" "Screenshot" "saved as $newname\nCopied to clipboard" --action="edit=Edit" --action="open=Open" --action="cancle=Cancel") in
+
+	'edit')
+	swappy -f "$file"
+	;;
+	'open')
+	imv-dir "$file"
+	;;
+	'cancel')
+	exit
+	;;
+esac
+
+
+else
+	notify-send --app-name="Screenshot" "Screenshot" "Action was aborted by user"
+fi
+	
